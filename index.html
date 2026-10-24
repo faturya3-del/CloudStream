@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android Cloud Streamer</title>
+    <!-- Library PeerJS untuk mempermudah koneksi WebRTC P2P via Cloud -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 30px; background: #181825; color: #cdd6f4; }
+        .card { background: #1e1e2e; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); max-width: 400px; margin: 0 auto; }
+        .id-box { background: #313244; padding: 12px; border-radius: 8px; font-size: 20px; font-weight: bold; color: #89b4fa; word-break: break-all; margin: 15px 0; }
+        button { padding: 14px 28px; font-size: 16px; font-weight: bold; border-radius: 8px; border: none; background: #89b4fa; color: #11111b; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #b4befe; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Android Streamer</h2>
+        <p>ID Stream Anda:</p>
+        <div id="my-id" class="id-box">Membuat ID...</div>
+        <button onclick="startStreaming()">Mulai Share Screen + Audio</button>
+    </div>
+
+    <script>
+        // Inisialisasi koneksi ke server gratis PeerJS Cloud
+        const peer = new Peer();
+
+        // Tampilkan ID unik setelah terhubung ke Cloud Server
+        peer.on('open', id => {
+            document.getElementById('my-id').innerText = id;
+        });
+
+        async function startStreaming() {
+            try {
+                // Meminta izin perekaman Layar dan Audio Sistem dari Android
+                const mediaStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: { frameRate: 30 },
+                    audio: true
+                });
+
+                // Ketika ada panggilan masuk dari aplikasi PC, jawab dengan mengirim mediaStream
+                peer.on('call', call => {
+                    call.answer(mediaStream);
+                });
+
+                alert("Streaming aktif! Masukkan ID di atas ke aplikasi PC.");
+            } catch (err) {
+                alert("Gagal mengambil layar/audio: " + err.message);
+            }
+        }
+    </script>
+</body>
+</html>
