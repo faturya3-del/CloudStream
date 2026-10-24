@@ -23,32 +23,46 @@
     </div>
 
     <script>
-        // Inisialisasi koneksi ke server gratis PeerJS Cloud
-        const peer = new Peer();
+    const peer = new Peer();
 
-        // Tampilkan ID unik setelah terhubung ke Cloud Server
-        peer.on('open', id => {
-            document.getElementById('my-id').innerText = id;
-        });
+    peer.on('open', id => {
+        document.getElementById('my-id').innerText = id;
+    });
 
-        async function startStreaming() {
+    async function startStreaming() {
+        let mediaStream = null;
+
+        // Cek dukungan browser
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+            alert("Browser HP Anda tidak mendukung Screen Sharing. Gunakan Google Chrome versi terbaru di Android.");
+            return;
+        }
+
+        try {
+            // Percobaan 1: Layar + Audio
+            mediaStream = await navigator.mediaDevices.getDisplayMedia({
+                video: { frameRate: 30 },
+                audio: true
+            });
+        } catch (err) {
+            console.warn("Gagal mengambil audio, mencoba layar saja...", err);
             try {
-                // Meminta izin perekaman Layar dan Audio Sistem dari Android
-                const mediaStream = await navigator.mediaDevices.getDisplayMedia({
+                // Percobaan 2: Fallback ke Layar saja jika audio ditolak HP
+                mediaStream = await navigator.mediaDevices.getDisplayMedia({
                     video: { frameRate: 30 },
-                    audio: true
+                    audio: false
                 });
-
-                // Ketika ada panggilan masuk dari aplikasi PC, jawab dengan mengirim mediaStream
-                peer.on('call', call => {
-                    call.answer(mediaStream);
-                });
-
-                alert("Streaming aktif! Masukkan ID di atas ke aplikasi PC.");
-            } catch (err) {
-                alert("Gagal mengambil layar/audio: " + err.message);
+            } catch (fallbackErr) {
+                alert("Izin perekaman layar ditolak: " + fallbackErr.message);
+                return;
             }
         }
-    </script>
-</body>
-</html>
+
+        // Jalankan listener panggil WebRTC
+        peer.on('call', call => {
+            call.answer(mediaStream);
+        });
+
+        alert("Streaming aktif! Masukkan ID di atas ke aplikasi PC.");
+    }
+</script>
